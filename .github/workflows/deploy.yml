@@ -71,7 +71,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.SSH_PASSWORD }}
           source: "dist/*"
           target: "/tmp/extra-addons-base/"
           strip_components: 1
@@ -82,7 +82,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.SSH_PASSWORD }}
           script: |
             DEPLOY_DIR="/opt/odoo14/extra-addons/base_search_mail_content"
             TEMP_DIR="/tmp/extra-addons-base"
