@@ -10,13 +10,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 🧹 Liberar espacio en runner
-      - name: Free up disk space
-        run: |
-          echo "🧹 Liberando espacio en el runner..."
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
-          df -h
-
       # 1️⃣ Checkout del código
       - name: Checkout code
         uses: actions/checkout@v4
