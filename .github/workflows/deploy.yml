@@ -1,0 +1,148 @@
+name: CI/CD Odoo QA
+
+on:
+  push:
+    branches:
+      - main   # o la rama que uses para QA
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 🧹 Liberar espacio en runner
+      - name: Free up disk space
+        run: |
+          echo "🧹 Liberando espacio en el runner..."
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /usr/local/share/boost
+          df -h
+
+      # 1️⃣ Checkout del código
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ Registrar hora de inicio
+      - name: Set start time
+        id: start_time
+        run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+
+      # 3️⃣ Variables del contexto GitHub
+      - name: Set GitHub context variables
+        run: |
+          echo "GITHUB_COMMIT_MESSAGE=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
+          echo "GITHUB_COMMIT_AUTHOR=${{ github.actor }}" >> $GITHUB_ENV
+          echo "GITHUB_RUN_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_ENV
+          echo "GITHUB_RUN_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
+          echo "CURRENT_DATE=$(date '+%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+          echo "GITHUB_BRANCH=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      # 🚀 Notificación de inicio
+      - name: Notify Teams (start)
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d "{
+            \"contentType\": \"application/json\",
+            \"content\": {
+              \"title\": \"🚀 Inicio de deploy Odoo 14\",
+              \"message\": \"Rama: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
+              \"author\": \"${GITHUB_COMMIT_AUTHOR}\",
+              \"date\": \"${CURRENT_DATE}\",
+              \"run\": \"${GITHUB_RUN_NUMBER}\",
+              \"url\": \"${GITHUB_RUN_URL}\"
+            }
+          }" "${{ secrets.TEAMS_WEBHOOK_URL }}"
+
+      # 🧹 Preparar carpeta limpia para deploy
+      - name: Prepare deploy package
+        run: |
+          mkdir dist
+          rsync -a ./ dist/ \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='venv/' \
+            --exclude='__pycache__/' \
+            --exclude='*.pyc' \
+            --exclude='*.log' \
+            --exclude='odoo/filestore/' \
+            --exclude='*.tar.gz'
+
+      # 📤 Subir dist al servidor
+      - name: Upload dist to server
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "dist/*"
+          target: "/tmp/extra-addons-base/"
+          strip_components: 1
+
+      # 📦 Deploy real al servidor
+      - name: Deploy Odoo on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            DEPLOY_DIR="/opt/odoo14/extra-addons/base_search_mail_content"
+            TEMP_DIR="/tmp/extra-addons-base"
+
+            echo "🚀 Actualizando código Odoo..."
+            rsync -a --delete "$TEMP_DIR/" "$DEPLOY_DIR/" \
+              --exclude='odoo14.conf' \
+              --exclude='venv/' \
+              --exclude='__pycache__/' \
+              --exclude='*.pyc' \
+              --exclude='*.log' \
+              --exclude='filestore/'
+
+            echo "🧹 Limpiando temporales..."
+            rm -rf "$TEMP_DIR"
+
+            echo "🔁 Reiniciando servicio Odoo..."
+            sudo systemctl restart odoo14 || sudo systemctl restart odoo
+
+            echo "✅ Deploy completado exitosamente."
+
+      # 🕒 Calcular duración
+      - name: Calculate duration
+        if: always()
+        run: |
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          echo "DURATION=$((DURATION / 60))m $((DURATION % 60))s" >> $GITHUB_ENV
+
+      # ✅ Éxito
+      - name: Notify Teams (success)
+        if: success()
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d "{
+            \"contentType\": \"application/json\",
+            \"content\": {
+              \"title\": \"✅ Deploy completado exitosamente\",
+              \"message\": \"Rama: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
+              \"author\": \"${GITHUB_COMMIT_AUTHOR}\",
+              \"date\": \"${CURRENT_DATE}\",
+              \"duration\": \"${DURATION}\",
+              \"run\": \"${GITHUB_RUN_NUMBER}\",
+              \"url\": \"${GITHUB_RUN_URL}\"
+            }
+          }" "${{ secrets.TEAMS_WEBHOOK_URL }}"
+
+      # ❌ Error
+      - name: Notify Teams (failure)
+        if: failure()
+        continue-on-error: true
+        run: |
+          curl -X POST -H "Content-Type: application/json" -d "{
+            \"contentType\": \"application/json\",
+            \"content\": {
+              \"title\": \"❌ Error durante el deploy de Odoo 14\",
+              \"message\": \"Rama: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
+              \"author\": \"${GITHUB_COMMIT_AUTHOR}\",
+              \"date\": \"${CURRENT_DATE}\",
+              \"duration\": \"${DURATION}\",
+              \"run\": \"${GITHUB_RUN_NUMBER}\",
+              \"url\": \"${GITHUB_RUN_URL}\"
+            }
+          }" "${{ secrets.TEAMS_WEBHOOK_URL }}"
