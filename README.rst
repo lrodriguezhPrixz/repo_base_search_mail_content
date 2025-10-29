@@ -1,5 +1,5 @@
 ========================
-Base Search Mail Content v1
+Base Search Mail Content v2
 ========================
 
 .. 
