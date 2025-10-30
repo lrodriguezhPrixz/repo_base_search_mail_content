@@ -35,8 +35,8 @@ jobs:
           curl -X POST -H "Content-Type: application/json" -d "{
             \"contentType\": \"application/json\",
             \"content\": {
-              \"title\": \"🚀 Inicio de deploy Odoo 14\",
-              \"message\": \"Rama: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
+              \"title\": \"🚀 Inicio de deploy repo_base_search_mail_content 14\",
+              \"message\": \"Rama repo_base_search_mail_content: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
               \"author\": \"${GITHUB_COMMIT_AUTHOR}\",
               \"date\": \"${CURRENT_DATE}\",
               \"run\": \"${GITHUB_RUN_NUMBER}\",
@@ -113,7 +113,7 @@ jobs:
             \"contentType\": \"application/json\",
             \"content\": {
               \"title\": \"✅ Deploy completado exitosamente\",
-              \"message\": \"Rama: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
+              \"message\": \"Rama repo_base_search_mail_content: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
               \"author\": \"${GITHUB_COMMIT_AUTHOR}\",
               \"date\": \"${CURRENT_DATE}\",
               \"duration\": \"${DURATION}\",
@@ -130,8 +130,8 @@ jobs:
           curl -X POST -H "Content-Type: application/json" -d "{
             \"contentType\": \"application/json\",
             \"content\": {
-              \"title\": \"❌ Error durante el deploy de Odoo 14\",
-              \"message\": \"Rama: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
+              \"title\": \"❌ Error durante el deploy repo_base_search_mail_content 14\",
+              \"message\": \"Rama repo_base_search_mail_content: ${GITHUB_BRANCH} | Commit: ${GITHUB_COMMIT_MESSAGE}\",
               \"author\": \"${GITHUB_COMMIT_AUTHOR}\",
               \"date\": \"${CURRENT_DATE}\",
               \"duration\": \"${DURATION}\",
