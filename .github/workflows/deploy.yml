@@ -93,7 +93,7 @@ jobs:
             rm -rf "$TEMP_DIR"
 
             echo "🔁 Reiniciando servicio Odoo..."
-            sudo systemctl restart odoo14 || sudo systemctl restart odoo
+            sudo systemctl restart odoo14 || sudo systemctl restart odoo14
 
             echo "✅ Deploy completado exitosamente."
 
